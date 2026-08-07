@@ -1,0 +1,38 @@
+# Dépendances
+node_modules/
+
+# Outils locaux d'assistant (skills UI/UX, etc.) — pas du code applicatif
+.claude/
+
+# Fichiers compilés Python
+*.pyc
+__pycache__/
+
+# Build
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Secrets — jamais commités
+.env
+*.env
+.env.local
+.env.*.local
+
+# Éditeurs / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+
+# Caches
+.eslintcache
+.cache/

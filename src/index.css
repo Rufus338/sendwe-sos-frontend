@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+/* Design system UI/UX Pro Max — base typo & anti-patterns */
+body {
+  font-family: "Fira Sans", sans-serif;
+  background-color: #fff1f2;
+  color: #0f172a;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Données techniques en Fira Code (typographie dashboard) */
+.font-data {
+  font-family: "Fira Code", monospace;
+}
+
+/* Focus visible pour la navigation clavier (WCAG 2.4.7) */
+:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+/* Respecter prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
