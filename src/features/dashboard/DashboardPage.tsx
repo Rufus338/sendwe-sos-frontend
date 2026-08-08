@@ -1,5 +1,5 @@
 /** H2 — Tableau de bord / carte temps réel (section 9.D). */
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import type { Ambulance, Page, Trip } from "../../lib/types";
@@ -13,8 +13,6 @@ const AMB_COLOR: Record<string, string> = {
   OFFLINE: "#6b7280",
 };
 
-const ACTIVE_TRIPS = ["REQUESTED", "SEARCHING", "ASSIGNED", "ACCEPTED", "EN_ROUTE_TO_PATIENT", "ARRIVED_AT_PATIENT", "PATIENT_PICKED_UP", "EN_ROUTE_TO_HOSPITAL", "ARRIVED_AT_HOSPITAL"];
-
 export function DashboardPage() {
   const navigate = useNavigate();
   const [ambulances, setAmbulances] = useState<Ambulance[]>([]);
@@ -22,15 +20,16 @@ export function DashboardPage() {
   const [selected, setSelected] = useState<string | null>(null);
   const [routes, setRoutes] = useState<MapRoute[]>([]);
   const [loading, setLoading] = useState(true);
+  const fallbackTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       const [ambRes, tripRes] = await Promise.all([
         api<Page<Ambulance>>("/ambulances", { params: { page_size: 100 } }),
-        api<Page<Trip>>("/trips", { params: { page_size: 100 } }),
+        api<Page<Trip>>("/trips", { params: { page_size: 100, status: "active" } }),
       ]);
       setAmbulances(ambRes.items);
-      setTrips(tripRes.items.filter((t) => ACTIVE_TRIPS.includes(t.status)));
+      setTrips(tripRes.items);
     } catch {
       /* le temps réel via WS gère les erreurs */
     } finally {
@@ -41,11 +40,29 @@ export function DashboardPage() {
   useEffect(() => {
     refresh();
     const onRefresh = () => refresh();
+    const onStatus = (e: Event) => {
+      const connected = (e as CustomEvent).detail?.connected as boolean;
+      if (!connected) {
+        // Fallback polling toutes les 10 s si le WS est perdu (section H2)
+        if (!fallbackTimerRef.current) {
+          fallbackTimerRef.current = setInterval(refresh, 10000);
+        }
+      } else {
+        if (fallbackTimerRef.current) {
+          clearInterval(fallbackTimerRef.current);
+          fallbackTimerRef.current = null;
+        }
+        refresh();
+      }
+    };
     window.addEventListener("ws:ambulance", onRefresh);
     window.addEventListener("ws:trip", onRefresh);
+    window.addEventListener("ws:status", onStatus);
     return () => {
       window.removeEventListener("ws:ambulance", onRefresh);
       window.removeEventListener("ws:trip", onRefresh);
+      window.removeEventListener("ws:status", onStatus);
+      if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
     };
   }, [refresh]);
 

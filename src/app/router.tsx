@@ -22,6 +22,13 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+/** Garde de route par rôle (section 6 — RBAC aussi côté route). */
+function RequireRole({ roles, children }: { roles: string[]; children: React.ReactNode }) {
+  const { role } = useAuthStore();
+  if (!role || !roles.includes(role)) return <Navigate to="/dashboard" replace />;
+  return <>{children}</>;
+}
+
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   {
@@ -43,9 +50,30 @@ export const router = createBrowserRouter([
       { path: "trips", element: <TripsPage /> },
       { path: "trips/:id", element: <TripDetailPage /> },
       { path: "settings", element: <SettingsPage /> },
-      { path: "settings/admins", element: <AdminsPage /> },
-      { path: "admin/hospitals", element: <HospitalsAdminPage /> },
-      { path: "admin/hospitals/new", element: <HospitalCreatePage /> },
+      {
+        path: "settings/admins",
+        element: (
+          <RequireRole roles={["ADMIN_HOSPITAL"]}>
+            <AdminsPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: "admin/hospitals",
+        element: (
+          <RequireRole roles={["SUPER_ADMIN"]}>
+            <HospitalsAdminPage />
+          </RequireRole>
+        ),
+      },
+      {
+        path: "admin/hospitals/new",
+        element: (
+          <RequireRole roles={["SUPER_ADMIN"]}>
+            <HospitalCreatePage />
+          </RequireRole>
+        ),
+      },
     ],
   },
 ]);

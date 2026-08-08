@@ -1,4 +1,4 @@
-/** H5 — Liste des ambulanciers (section 9.D). */
+/** H5 — Liste des ambulanciers (section 9.D : recherche, filtre disponibilité). */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
@@ -10,6 +10,8 @@ export function DriversPage() {
   const { show, node } = useToast();
   const [items, setItems] = useState<Driver[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [availability, setAvailability] = useState("");
   const [toDisable, setToDisable] = useState<Driver | null>(null);
 
   const refresh = useCallback(async () => {
@@ -51,11 +53,43 @@ export function DriversPage() {
     }
   };
 
+  const q = query.trim().toLowerCase();
+  const filtered = items.filter((d) => {
+    if (availability === "available" && !d.is_available) return false;
+    if (availability === "busy" && d.is_available) return false;
+    if (availability === "assigned" && !d.ambulance) return false;
+    if (!q) return true;
+    return (
+      d.full_name.toLowerCase().includes(q) ||
+      d.phone.includes(q) ||
+      (d.ambulance?.plate_number ?? "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Ambulanciers</h1>
         <Button onClick={() => navigate("/drivers/new")}>Ajouter un ambulancier</Button>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher (nom, téléphone, ambulance)…"
+          className="w-72 rounded-control border border-border bg-white px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        />
+        <select
+          value={availability}
+          onChange={(e) => setAvailability(e.target.value)}
+          className="rounded-control border border-border bg-white px-3 py-2 text-sm"
+        >
+          <option value="">Tous les statuts</option>
+          <option value="available">Disponibles</option>
+          <option value="busy">En intervention</option>
+          <option value="assigned">Avec ambulance assignée</option>
+        </select>
+        <span className="text-sm text-muted-foreground">{filtered.length} résultat(s)</span>
       </div>
       <div className="overflow-hidden rounded-lg border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -74,14 +108,14 @@ export function DriversPage() {
                 <td colSpan={5} className="px-4 py-6 text-center text-gray-500">Chargement…</td>
               </tr>
             )}
-            {!loading && items.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
                   Aucun ambulancier pour le moment
                 </td>
               </tr>
             )}
-            {items.map((d) => (
+            {filtered.map((d) => (
               <tr key={d.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">{d.full_name}</td>
                 <td className="px-4 py-3">{d.phone}</td>

@@ -1,9 +1,16 @@
-/** H8 — Détail intervention avec timeline (section 9.D). */
+/** H8 — Détail intervention avec timeline + carte trajectoire (section 9.D). */
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../../lib/api";
 import type { TripDetail } from "../../lib/types";
+import { LiveMap, MapMarker } from "../../shared/LiveMap";
 import { Button, ConfirmModal, StatusBadge, useToast } from "../../shared/ui";
+
+const ACTIVE_STATES = [
+  "REQUESTED", "SEARCHING", "ASSIGNED", "ACCEPTED", "EN_ROUTE_TO_PATIENT",
+  "ARRIVED_AT_PATIENT", "PATIENT_PICKED_UP", "EN_ROUTE_TO_HOSPITAL",
+  "ARRIVED_AT_HOSPITAL",
+];
 
 export function TripDetailPage() {
   const { id } = useParams();
@@ -12,6 +19,7 @@ export function TripDetailPage() {
   const [trip, setTrip] = useState<TripDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [confirmReassign, setConfirmReassign] = useState(false);
+  const [confirmCancel, setConfirmCancel] = useState(false);
 
   const load = () => {
     api<TripDetail>(`/trips/${id}`).then(setTrip).finally(() => setLoading(false));
@@ -32,14 +40,42 @@ export function TripDetailPage() {
     }
   };
 
+  const cancelTrip = async () => {
+    if (!trip) return;
+    try {
+      await api(`/trips/${trip.id}/cancel`, {
+        method: "PATCH",
+        body: JSON.stringify({ reason: "Annulation admin" }),
+      });
+      show("Intervention annulée");
+      setConfirmCancel(false);
+      load();
+    } catch (e) {
+      show(e instanceof Error ? e.message : "Erreur", "error");
+    }
+  };
+
   if (loading) return <p className="text-gray-500">Chargement…</p>;
   if (!trip) return <p className="text-gray-500">Intervention introuvable</p>;
+
+  const pickup = trip.pickup_location;
+  const markers: MapMarker[] = pickup
+    ? [{ id: "pickup", lat: pickup.lat, lng: pickup.lng, color: "#dc2626", label: "Prise en charge" }]
+    : [];
+  const canCancel = ACTIVE_STATES.includes(trip.status);
 
   return (
     <div className="max-w-3xl space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-semibold">Intervention {trip.id.slice(0, 8)}</h1>
-        <Button variant="secondary" onClick={() => navigate("/trips")}>Retour</Button>
+        <div className="flex gap-2">
+          {canCancel && (
+            <Button variant="danger" onClick={() => setConfirmCancel(true)}>
+              Annuler
+            </Button>
+          )}
+          <Button variant="secondary" onClick={() => navigate("/trips")}>Retour</Button>
+        </div>
       </div>
 
       <div className="rounded-lg border border-gray-200 p-4">
@@ -60,6 +96,11 @@ export function TripDetailPage() {
             <Button onClick={() => setConfirmReassign(true)}>Réassigner (relancer le matching)</Button>
           </div>
         )}
+      </div>
+
+      {/* Carte trajectoire (H8) */}
+      <div className="overflow-hidden rounded-lg border border-gray-200">
+        <LiveMap markers={markers} height="280px" />
       </div>
 
       <div className="rounded-lg border border-gray-200 p-4">
@@ -87,6 +128,15 @@ export function TripDetailPage() {
         confirmLabel="Relancer le matching"
         onConfirm={reassign}
         onCancel={() => setConfirmReassign(false)}
+      />
+      <ConfirmModal
+        open={confirmCancel}
+        title="Annuler l'intervention"
+        message={`Confirmer l'annulation de l'intervention ${trip.id.slice(0, 8)} ?`}
+        confirmLabel="Annuler l'intervention"
+        danger
+        onConfirm={cancelTrip}
+        onCancel={() => setConfirmCancel(false)}
       />
       {node}
     </div>

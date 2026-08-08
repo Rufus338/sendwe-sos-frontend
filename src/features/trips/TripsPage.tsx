@@ -1,4 +1,4 @@
-/** H7 — Liste des interventions filtrable (section 9.D). */
+/** H7 — Liste des interventions filtrable + paginée (section 9.D). */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
@@ -11,27 +11,34 @@ const STATUSES: TripStatus[] = [
   "ARRIVED_AT_HOSPITAL", "COMPLETED", "CANCELLED", "REJECTED", "FAILED",
 ];
 
+const PAGE_SIZE = 20;
+
 export function TripsPage() {
   const navigate = useNavigate();
   const { show, node } = useToast();
   const [items, setItems] = useState<Trip[]>([]);
   const [status, setStatus] = useState<string>("");
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
   const [toCancel, setToCancel] = useState<Trip | null>(null);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const params: Record<string, string | number> = { page_size: 100 };
+      const params: Record<string, string | number> = { page, page_size: PAGE_SIZE };
       if (status) params.status = status;
       const data = await api<Page<Trip>>("/trips", { params });
       setItems(data.items);
+      setPages(data.pages);
+      setTotal(data.total);
     } catch {
       /* ignore */
     } finally {
       setLoading(false);
     }
-  }, [status]);
+  }, [status, page]);
 
   useEffect(() => {
     refresh();
@@ -39,6 +46,11 @@ export function TripsPage() {
     window.addEventListener("ws:trip", onRefresh);
     return () => window.removeEventListener("ws:trip", onRefresh);
   }, [refresh]);
+
+  // Changer de filtre ou d'activité WS → retour à la page 1
+  useEffect(() => {
+    setPage(1);
+  }, [status]);
 
   const cancel = async (t: Trip) => {
     try {
@@ -110,6 +122,30 @@ export function TripsPage() {
           </tbody>
         </table>
       </div>
+      {/* Pagination (section 24) */}
+      {!loading && total > 0 && (
+        <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
+          <span>
+            {total} intervention(s) — page {page}/{Math.max(pages, 1)}
+          </span>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page <= 1}
+              className="rounded-control border border-border px-3 py-1.5 disabled:opacity-40 cursor-pointer"
+            >
+              ← Précédent
+            </button>
+            <button
+              onClick={() => setPage((p) => Math.min(pages, p + 1))}
+              disabled={page >= pages}
+              className="rounded-control border border-border px-3 py-1.5 disabled:opacity-40 cursor-pointer"
+            >
+              Suivant →
+            </button>
+          </div>
+        </div>
+      )}
 
       <ConfirmModal
         open={!!toCancel}

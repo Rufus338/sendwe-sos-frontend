@@ -110,6 +110,7 @@ export function ConfirmModal({
   message,
   confirmLabel = "Confirmer",
   danger = false,
+  confirmDisabled = false,
   onConfirm,
   onCancel,
 }: {
@@ -118,6 +119,7 @@ export function ConfirmModal({
   message: React.ReactNode;
   confirmLabel?: string;
   danger?: boolean;
+  confirmDisabled?: boolean;
   onConfirm: () => void;
   onCancel: () => void;
 }) {
@@ -136,7 +138,11 @@ export function ConfirmModal({
           <Button variant="secondary" onClick={onCancel}>
             Annuler
           </Button>
-          <Button variant={danger ? "danger" : "primary"} onClick={onConfirm}>
+          <Button
+            variant={danger ? "danger" : "primary"}
+            onClick={onConfirm}
+            disabled={confirmDisabled}
+          >
             {confirmLabel}
           </Button>
         </div>

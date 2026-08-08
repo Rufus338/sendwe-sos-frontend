@@ -22,7 +22,10 @@ export function DashboardLayout() {
 
   useEffect(() => {
     const ws = new WSClient({
-      onStatusChange: setWsOnline,
+      onStatusChange: (connected) => {
+        setWsOnline(connected);
+        window.dispatchEvent(new CustomEvent("ws:status", { detail: { connected } }));
+      },
       handlers: {
         "ambulance.location.updated": () => window.dispatchEvent(new CustomEvent("ws:ambulance")),
         "emergency.status.updated": () => window.dispatchEvent(new CustomEvent("ws:trip")),

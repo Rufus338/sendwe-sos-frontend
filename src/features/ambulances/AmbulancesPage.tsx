@@ -1,15 +1,25 @@
-/** H3 — Liste des ambulances (section 9.D). */
+/** H3 — Liste des ambulances (section 9.D : recherche, filtre statut, ambulancier). */
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../../lib/api";
 import type { Ambulance, Page } from "../../lib/types";
 import { Button, ConfirmModal, StatusBadge, useToast } from "../../shared/ui";
 
+const STATUS_FILTERS = [
+  { value: "", label: "Tous les statuts" },
+  { value: "AVAILABLE", label: "Disponibles" },
+  { value: "BUSY", label: "En intervention" },
+  { value: "OUT_OF_SERVICE", label: "Hors service" },
+  { value: "OFFLINE", label: "Hors ligne" },
+];
+
 export function AmbulancesPage() {
   const navigate = useNavigate();
   const { show, node } = useToast();
   const [items, setItems] = useState<Ambulance[]>([]);
   const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [toDelete, setToDelete] = useState<Ambulance | null>(null);
   const [confirmText, setConfirmText] = useState("");
   const [toOffline, setToOffline] = useState<Ambulance | null>(null);
@@ -51,11 +61,42 @@ export function AmbulancesPage() {
     }
   };
 
+  const q = query.trim().toLowerCase();
+  const filtered = items.filter((a) => {
+    if (statusFilter && a.status !== statusFilter) return false;
+    if (!q) return true;
+    return (
+      a.plate_number.toLowerCase().includes(q) ||
+      a.model.toLowerCase().includes(q) ||
+      (a.assigned_driver_name ?? "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-between">
         <h1 className="text-xl font-semibold">Ambulances</h1>
         <Button onClick={() => navigate("/ambulances/new")}>Ajouter une ambulance</Button>
+      </div>
+      <div className="mb-4 flex flex-wrap items-center gap-3">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Rechercher (immatriculation, modèle, ambulancier)…"
+          className="w-72 rounded-control border border-border bg-white px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-control border border-border bg-white px-3 py-2 text-sm"
+        >
+          {STATUS_FILTERS.map((s) => (
+            <option key={s.value} value={s.value}>
+              {s.label}
+            </option>
+          ))}
+        </select>
+        <span className="text-sm text-muted-foreground">{filtered.length} résultat(s)</span>
       </div>
       <div className="overflow-hidden rounded-lg border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200 text-sm">
@@ -65,31 +106,35 @@ export function AmbulancesPage() {
               <th className="px-4 py-3">Modèle</th>
               <th className="px-4 py-3">Capacité</th>
               <th className="px-4 py-3">Statut</th>
+              <th className="px-4 py-3">Ambulancier</th>
               <th className="px-4 py-3">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {loading && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
                   Chargement…
                 </td>
               </tr>
             )}
-            {!loading && items.length === 0 && (
+            {!loading && filtered.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
                   Aucune ambulance pour le moment
                 </td>
               </tr>
             )}
-            {items.map((a) => (
+            {filtered.map((a) => (
               <tr key={a.id} className="hover:bg-gray-50">
                 <td className="px-4 py-3 font-medium">{a.plate_number}</td>
                 <td className="px-4 py-3">{a.model}</td>
                 <td className="px-4 py-3">{a.capacity}</td>
                 <td className="px-4 py-3">
                   <StatusBadge status={a.status} />
+                </td>
+                <td className="px-4 py-3 text-gray-600">
+                  {a.assigned_driver_name ?? "—"}
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex gap-2">
@@ -162,6 +207,7 @@ export function AmbulancesPage() {
         }
         confirmLabel="Supprimer définitivement"
         danger
+        confirmDisabled={confirmText.trim() !== toDelete?.plate_number}
         onConfirm={confirmDelete}
         onCancel={() => setToDelete(null)}
       />

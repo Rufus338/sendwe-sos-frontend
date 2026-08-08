@@ -33,6 +33,8 @@ export interface Ambulance {
   location_updated_at?: string | null;
   heading?: number | null;
   speed_kmh?: number | null;
+  assigned_driver_id?: string | null;
+  assigned_driver_name?: string | null;
 }
 
 export interface Driver {

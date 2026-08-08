@@ -10,6 +10,7 @@ export function SettingsPage() {
   const { show, node } = useToast();
   const userId = useAuthStore((s) => s.userId);
   const [form, setForm] = useState({
+    name: "",
     address: "",
     contact_phone: "",
     emergency_backup_phone: "",
@@ -26,6 +27,7 @@ export function SettingsPage() {
       setHospitalId(me.hospital_id);
       const h = await api<Hospital>(`/hospitals/${me.hospital_id}`);
       setForm({
+        name: h.name,
         address: h.address ?? "",
         contact_phone: h.contact_phone,
         emergency_backup_phone: h.emergency_backup_phone ?? "",
@@ -67,6 +69,13 @@ export function SettingsPage() {
     <div className="max-w-lg">
       <h1 className="mb-4 text-xl font-semibold">Paramètres de l'hôpital</h1>
       <form onSubmit={submit} className="space-y-4 rounded-lg border border-gray-200 p-6">
+        <Field
+          label="Nom de l'hôpital"
+          value={form.name}
+          onChange={() => {}}
+          disabled
+          hint="Modifiable par le super admin uniquement"
+        />
         <Field
           label="Adresse"
           value={form.address}
