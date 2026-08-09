@@ -40,6 +40,7 @@ export function DashboardPage() {
   useEffect(() => {
     refresh();
     const onRefresh = () => refresh();
+    const onReconnect = () => refresh();
     const onStatus = (e: Event) => {
       const connected = (e as CustomEvent).detail?.connected as boolean;
       if (!connected) {
@@ -58,10 +59,12 @@ export function DashboardPage() {
     window.addEventListener("ws:ambulance", onRefresh);
     window.addEventListener("ws:trip", onRefresh);
     window.addEventListener("ws:status", onStatus);
+    window.addEventListener("ws:reconnect", onReconnect);
     return () => {
       window.removeEventListener("ws:ambulance", onRefresh);
       window.removeEventListener("ws:trip", onRefresh);
       window.removeEventListener("ws:status", onStatus);
+      window.removeEventListener("ws:reconnect", onReconnect);
       if (fallbackTimerRef.current) clearInterval(fallbackTimerRef.current);
     };
   }, [refresh]);

@@ -26,6 +26,10 @@ export function DashboardLayout() {
         setWsOnline(connected);
         window.dispatchEvent(new CustomEvent("ws:status", { detail: { connected } }));
       },
+      // Resynchronisation REST à la reconnexion (section 16.1)
+      onReconnect: () => {
+        window.dispatchEvent(new CustomEvent("ws:reconnect"));
+      },
       handlers: {
         "ambulance.location.updated": () => window.dispatchEvent(new CustomEvent("ws:ambulance")),
         "emergency.status.updated": () => window.dispatchEvent(new CustomEvent("ws:trip")),

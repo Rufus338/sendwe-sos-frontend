@@ -5,6 +5,7 @@ type Handler = (data: Record<string, unknown>) => void;
 
 interface WSManagerOptions {
   onStatusChange?: (connected: boolean) => void;
+  onReconnect?: () => void;
   handlers: Record<string, Handler>;
 }
 
@@ -16,10 +17,12 @@ export class WSClient {
   private backoff = 1000;
   private closed = false;
   private onStatusChange?: (connected: boolean) => void;
+  private onReconnect?: () => void;
 
   constructor(options: WSManagerOptions) {
     this.handlers = options.handlers;
     this.onStatusChange = options.onStatusChange;
+    this.onReconnect = options.onReconnect;
   }
 
   connect() {
@@ -30,8 +33,9 @@ export class WSClient {
     this.ws = new WebSocket(`${proto}://${location.host}/ws?token=${token}`);
 
     this.ws.onopen = () => {
-      this.backoff = 1000;
+      this.backoff = 1000; // connexion établie : réinitialiser le backoff
       this.onStatusChange?.(true);
+      this.onReconnect?.();
     };
 
     this.ws.onmessage = (ev) => {
