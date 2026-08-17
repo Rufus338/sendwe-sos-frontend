@@ -29,6 +29,8 @@ function RequireRole({ roles, children }: { roles: string[]; children: React.Rea
   return <>{children}</>;
 }
 
+export { RequireAuth, RequireRole };
+
 export const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
   {
