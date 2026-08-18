@@ -15,13 +15,16 @@ Dashboard d'administration pour les **hôpitaux** : gestion des ambulances, des 
 
 | Variable | Valeur | Rôle |
 |---|---|---|
-| `VITE_API_URL` | `https://<backend>.up.railway.app` | URL du backend en production (Cloudflare Pages → Railway). Vide en dev : proxy Vite `/api` → `localhost:8000` |
+| `VITE_API_URL` | `https://sendwe-sos-backend-production.up.railway.app` | URL du backend en production (Cloudflare Pages → Railway). Vide en dev : proxy Vite `/api` → `localhost:8000` |
 
 Le proxy est configuré dans `vite.config.ts` (port **5174** par défaut, car 5173 est souvent occupé).
 
 ### Production (Cloudflare Pages + Railway)
 
 Le dashboard et l'API sont sur **deux domaines différents** :
+
+- **Frontend** : `https://sendwe-sos-frontend.thaumaturgemutombo.workers.dev` (Cloudflare Workers)
+- **Backend** : `https://sendwe-sos-backend-production.up.railway.app` (Railway)
 
 1. **Frontend** — `VITE_API_URL` doit pointer vers l'URL publique du backend
    Railway au moment du **build** (Vite l'injecte en dur dans le bundle). Deux
