@@ -1,7 +1,12 @@
 /** Client HTTP avec gestion du refresh token (section 15.1, 20). */
 import { useAuthStore } from "../features/auth/authStore";
 
-const API_BASE = "/api/v1";
+// En dev : proxy Vite → /api (voir vite.config.ts).
+// En prod (Cloudflare Pages) : VITE_API_URL pointe vers le backend Railway,
+// ex. https://sendwe-sos-backend.up.railway.app
+const API_BASE = import.meta.env.VITE_API_URL
+  ? `${import.meta.env.VITE_API_URL}/api/v1`
+  : "/api/v1";
 
 type ApiErrorPayload = { error_code?: string; message?: string; detail?: string };
 

@@ -1,6 +1,11 @@
 # Dépendances
 node_modules/
 
+# Secrets — jamais commités (définir dans Cloudflare Pages → Env vars)
+.env
+.env.*
+!.env.example
+
 # Outils locaux d'assistant (skills UI/UX, etc.) — pas du code applicatif
 .claude/
 

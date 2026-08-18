@@ -29,8 +29,13 @@ export class WSClient {
     const token = useAuthStore.getState().accessToken;
     if (!token) return;
     this.closed = false;
-    const proto = location.protocol === "https:" ? "wss" : "ws";
-    this.ws = new WebSocket(`${proto}://${location.host}/ws?token=${token}`);
+    // En dev : même origine (proxy Vite ws://localhost:8000).
+    // En prod : VITE_API_URL (Railway) convertie en ws/wss.
+    const apiUrl = import.meta.env.VITE_API_URL;
+    const wsBase = apiUrl
+      ? apiUrl.replace(/^http/, "ws")
+      : `${location.protocol === "https:" ? "wss" : "ws"}://${location.host}`;
+    this.ws = new WebSocket(`${wsBase}/ws?token=${token}`);
 
     this.ws.onopen = () => {
       this.backoff = 1000; // connexion établie : réinitialiser le backoff
