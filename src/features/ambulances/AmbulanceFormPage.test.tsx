@@ -3,8 +3,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { AmbulanceFormPage } from "../features/ambulances/AmbulanceFormPage";
-import { useAuthStore } from "../features/auth/authStore";
+import { AmbulanceFormPage } from "./AmbulanceFormPage";
+import { useAuthStore } from "../auth/authStore";
 
 function renderForm() {
   return render(
